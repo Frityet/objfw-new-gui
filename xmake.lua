@@ -1,11 +1,6 @@
 ---@diagnostic disable: undefined-global
 
---Packages, you can use `xrepo search <name>` to search packages,
---and prefix with other package managers, for example `vcpkg::pcre2` in order to use their packages.
---Documentation: https://xmake.io/#/manual/global_interfaces?id=add_requires
-local packages = {
-
-}
+includes("packages.lua")
 
 --Sanitizers to use when building in debug mode
 local sanitizers = { "address", "leak", "undefined" }
@@ -34,13 +29,13 @@ local ldflags = {
 set_languages("gnulatest")
 
 add_requires("objfw", { configs = { shared = is_kind("shared") } })
-add_requires(packages, { configs = { shared = is_kind("shared") } })
+add_requires("obj-ui master", "libui master", { configs = { shared = is_kind("shared") } })
 
-target("MyProject")
+target("ObjFW-New-GUI")
 do
     set_kind("binary")
     add_packages("objfw")
-    add_packages(packages)
+    add_packages("obj-ui", "libui")
 
     add_files("src/**.m")
     add_headerfiles("src/**.h")
