@@ -46,7 +46,7 @@
 
         auto addProp = [OUIButton buttonWithLabel: @"Add Property"];
         addProp.onChanged = ^(OUIControl *) {
-            [model.properties addObject: [Property propertyWithName: @"myProperty" type: @"OFString *" attributes: [@[ @"readonly" ] mutableCopy]]];
+            [model.properties addObject: [Property propertyWithName: @"myProperty" type: @"OFString *" attributes: @[ @"readonly" ]]];
             [table.model alertRowInsertedAt: model.properties.count - 1];
         };
         [vbox appendControl: addProp stretchy: true];
@@ -70,7 +70,7 @@
         [f writeFormat: @"@interface %@ : %@\n\n", title, superClassLabel.text];
 
         for (Property *prop in model.properties) {
-            [f writeFormat: @"@property(%@) %@%s%@;\n", [prop.attributes componentsJoinedByString: @", "], prop.type, [prop.type characterAtIndex: prop.type.length - 1] == '*' ? "" : " ", prop.name];
+            [f writeFormat: @"@property(%@) %@%s%@;\n", prop.attributeList, prop.type, [prop.type characterAtIndex: prop.type.length - 1] == '*' ? "" : " ", prop.name];
         }
 
         [f writeLine: @""];

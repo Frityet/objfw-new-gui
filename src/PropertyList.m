@@ -4,25 +4,25 @@
 
 @implementation Property
 
-- (instancetype)initWithName: (OFString *)name type: (OFString *)type attributes: (OFMutableArray<OFString *> *)attributes
+- (instancetype)initWithName: (OFString *)name type: (OFString *)type attributes: (OFArray<OFString *> *)attributes
 {
     self = [super init];
 
     _name = name;
     _type = type;
-    _attributes = attributes;
+    _attributeList = [attributes componentsJoinedByString: @", "];
 
     return self;
 }
 
-+ (instancetype)propertyWithName: (OFString *)name type: (OFString *)type attributes: (OFMutableArray<OFString *> *)attributes
++ (instancetype)propertyWithName: (OFString *)name type: (OFString *)type attributes: (OFArray<OFString *> *)attributes
 {
     return [[self alloc] initWithName: name type: type attributes: attributes];
 }
 
 - (OFString *)description
 {
-    return [OFString stringWithFormat: @"<Property: type = %@, name = %@, attributes = [ %@ ]>", _type, _name, [_attributes componentsJoinedByString: @", "]];
+    return [OFString stringWithFormat: @"<Property: type = %@, name = %@, attributes = [ %@ ]>", _type, _name, _attributeList];
 }
 
 @end
@@ -74,7 +74,7 @@
         case 1:
             return [StringTableValue valueWithString: property.type];
         case 2:
-            return [StringTableValue valueWithString: [property.attributes componentsJoinedByString: @", "]];
+            return [StringTableValue valueWithString: property.attributeList];
         case 3:
             return [StringTableValue valueWithString: @"Remove"];
         default:
@@ -94,7 +94,7 @@
             property.type = value.value ?: @"";
             break;
         case 2:
-            property.attributes = [[value.value componentsSeparatedByString: @", "] mutableCopy];
+            property.attributeList = value.value ?: @"";
             break;
 
         //the remove button

@@ -8,10 +8,10 @@
 
 @property OFString *name;
 @property OFString *type;
-@property OFMutableArray<OFString *> *attributes;
+@property OFString *attributeList;
 
-- (instancetype)initWithName: (OFString *)name type: (OFString *)type attributes: (OFMutableArray<OFString *> *)attributes;
-+ (instancetype)propertyWithName: (OFString *)name type: (OFString *)type attributes: (OFMutableArray<OFString *> *)attributes;
+- (instancetype)initWithName: (OFString *)name type: (OFString *)type attributes: (OFArray<OFString *> *)attributes;
++ (instancetype)propertyWithName: (OFString *)name type: (OFString *)type attributes: (OFArray<OFString *> *)attributes;
 
 @end
 
