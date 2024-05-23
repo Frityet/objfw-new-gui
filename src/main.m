@@ -1,57 +1,12 @@
-#import <ObjFW/ObjFW.h>
-#import <ObjUI/ObjUI.h>
+#import "common.h"
+
+#import "Pages/App.h"
+#import "Pages/Class.h"
+#import "Pages/Test.h"
 
 #import "Table.h"
-#import "PropertyList.h"
-
-#define nonnil _Nonnull
-#define nilable _Nullable
-#define auto __auto_type
-#define nilptr ((void *nillable)NULL)
 
 #pragma clang assume_nonnull begin
-
-@protocol Page
-
-- (OUIControl *)render;
-
-- (void)doActionWithTitle: (OFString *)title;
-
-@end
-
-@interface ClassPage : OFObject<Page> @end
-// @interface TestPage : OFObject<Page> @end
-// @interface AppPage : OFObject<Page> @end
-
-@implementation ClassPage {
-    PropertyListModel *_model;
-}
-
-- (instancetype)init
-{
-    self = [super init];
-
-    _model = [[PropertyListModel alloc] init];
-
-    return self;
-}
-
-- (OUIControl *)render
-{
-    auto vbox = [OUIBox verticalBox];
-    {
-        [vbox appendControl: [OUILabel labelWithText: @"Create a new class"]];
-        [vbox appendControl: [Table tableDescribedByModel: [TableModel modelWithDelegate: _model]]];
-    }
-    return vbox;
-}
-
-- (void)doActionWithTitle: (OFString *)title
-{
-    OFLog(@"ClassPage: %@", title);
-}
-
-@end
 
 @interface Application : OFObject<OFApplicationDelegate> @end
 
@@ -61,25 +16,36 @@
 
 - (OUIControl *)ui
 {
-    auto tab = [OUITab tab];
+    classPage = [[ClassPage alloc] init];
+    testPage = [[TestPage alloc] init];
+    appPage = [[AppPage alloc] init];
 
-    [tab appendControl: [classPage render] label: @"Class"];
+    auto vbox = [OUIBox verticalBox];
+    vbox.padded = true;
+    {
+        [vbox appendControl: [OUIEntry entryWithLabel: @"Name" placeholder: @"MyClass"]];
+        auto tab = [OUITab tab];
+        {
+            [tab appendControl: [classPage render] label: @"Class"];
+            [tab appendControl: [testPage render] label: @"Test"];
+            [tab appendControl: [appPage render] label: @"App"];
+        }
+        [vbox appendControl: tab];
 
-    return tab;
+        [vbox appendControl: [OUIButton buttonWithLabel: @"Create"] stretchy: true];
+    }
+    return vbox;
 }
 
 - (void)applicationDidFinishLaunching: (OFNotification *)notification
 {
-    classPage = [[ClassPage alloc] init];
-    // testPage = [[TestPage alloc] init];
-    // appPage = [[AppPage alloc] init];
-
     OUIWindow *wind = [[OUIWindow alloc] initWithTitle: @"ObjFW-new" width: 640 height: 480 hasMenubar: false];
     wind.child = self.ui;
     wind.onClosing = ^(OUIWindow *nonnil window) {
         [OFApplication terminate];
         return 0;
     };
+    wind.margined = true;
 
     [wind show];
     [OUI main];

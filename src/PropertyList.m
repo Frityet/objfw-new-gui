@@ -20,7 +20,28 @@
     return [[self alloc] initWithName: name type: type attributes: attributes];
 }
 
+- (OFString *)description
+{
+    return [OFString stringWithFormat: @"<Property: %@ %@ %@>", _type, _name, _attributes];
+}
+
 @end
+
+OFString *concat(OFArray<OFString *> *strs, OFString *separator)
+{
+    auto ret = [OFMutableString string];
+
+    for (OFString *str in strs) {
+        [ret appendString: str];
+        [ret appendString: separator];
+    }
+
+    if (ret.length > 0) {
+        [ret replaceCharactersInRange: OFMakeRange(ret.length - separator.length, separator.length) withString: @""];
+    }
+
+    return ret;
+}
 
 
 @implementation PropertyListModel
@@ -29,22 +50,16 @@
 {
     self = [super init];
 
-    _properties = [OFMutableArray array];
+    _properties = [@[
+        [Property propertyWithName: @"name" type: @"OFString *" attributes: [@[ @"readonly" ] mutableCopy]],
+    ] mutableCopy];
 
     return self;
 }
 
 - (int)columnCount
 {
-    //one for the property type, one for the property name, and the rest for the attributes
-    size_t maxAttributes = 0;
-    for (Property *property in self.properties) {
-        if (property.attributes.count > maxAttributes) {
-            maxAttributes = property.attributes.count;
-        }
-    }
-
-    return 2 + maxAttributes;
+    return 3;
 }
 
 - (int)rowCount
@@ -57,21 +72,18 @@
     return uiTableValueTypeString;
 }
 
-- (TableValue *)valueForRow: (int)row column: (int)column
+- (id<TableValue>)valueForRow: (int)row column: (int)column
 {
     auto property = self.properties[row];
     switch (column) {
         case 0:
-            return [StringTableValue valueWithString: property.type];
-        case 1:
             return [StringTableValue valueWithString: property.name];
-        default: {
-            if (column - 2 < (int)property.attributes.count) {
-                return [StringTableValue valueWithString: property.attributes[column - 2]];
-            } else {
-                @throw [OFOutOfRangeException exception];
-            }
-        }
+        case 1:
+            return [StringTableValue valueWithString: property.type];
+        case 2:
+            return [StringTableValue valueWithString: concat(property.attributes, @", ")];
+        default:
+            @throw [OFOutOfRangeException exception];
     }
 }
 
@@ -80,18 +92,16 @@
     auto property = self.properties[row];
     switch (column) {
         case 0:
-            property.type = value.value;
+            property.name = value.value ?: @"";
             break;
         case 1:
-            property.name = value.value;
+            property.type = value.value ?: @"";
             break;
-        default: {
-            if (column - 2 < (int)property.attributes.count) {
-                property.attributes[column - 2] = value.value;
-            } else {
-                @throw [OFOutOfRangeException exception];
-            }
-        }
+        case 2:
+            property.attributes = [[value.value componentsSeparatedByString: @", "] mutableCopy];
+            break;
+        default:
+            @throw [OFOutOfRangeException exception];
     }
 }
 

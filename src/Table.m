@@ -1,28 +1,14 @@
 #include "Table.h"
 
-#define auto __auto_type
-
-@implementation TableValue
-
-- (instancetype)initWithValue: (id)value
-{
-    @throw [OFNotImplementedException exceptionWithSelector: @selector(initWithValue:) object: self];
-}
-
-- (void)dealloc
-{
-    uiFreeTableValue(_backingValue);
-}
-
-@end
-
 @implementation StringTableValue
+
+@synthesize backingValue = _backingValue;
 
 - (instancetype)initWithValue: (OFString *)value
 {
     self = [super init];
 
-    _backingValue = uiNewTableValueString([value UTF8String]);
+    _backingValue = uiNewTableValueString(value.UTF8String);
 
     return self;
 }
@@ -30,9 +16,14 @@
 + (instancetype)valueWithString: (OFString *)value
 { return [[self alloc] initWithValue: value]; }
 
+- (OFString *)value
+{ return [OFString stringWithUTF8String: uiTableValueString(_backingValue)]; }
+
 @end
 
 @implementation IntegerTableValue
+
+@synthesize backingValue = _backingValue;
 
 - (instancetype)initWithValue: (OFNumber *)value
 {
@@ -46,39 +37,101 @@
 + (instancetype)valueWithNumber: (OFNumber *)value
 { return [[self alloc] initWithValue: value]; }
 
+- (OFNumber *)value
+{ return [OFNumber numberWithInt: uiTableValueInt(_backingValue)]; }
+
 @end
+
+@implementation InvalidTableValueException
+
+- (instancetype)initWithType:(uiTableValueType)type
+{
+    self = [super init];
+
+    _type = type;
+
+    return self;
+}
+
++ (instancetype)exceptionWithType:(uiTableValueType)type
+{ return [[self alloc] initWithType: type]; }
+
+- (OFString *)description
+{
+    return [OFString stringWithFormat: @"Invalid table value type: %@", ({
+        OFString *str;
+
+        switch (_type) {
+        case uiTableValueTypeString:
+            str = @"String";
+            break;
+        case uiTableValueTypeInt:
+            str = @"Int";
+            break;
+        case uiTableValueTypeColor:
+            str = @"Colour";
+            break;
+        case uiTableValueTypeImage:
+            str = @"Image";
+            break;
+        default:
+            str = [OFString stringWithFormat: @"Unknown (%d)", _type];
+            break;
+        }
+
+        str;
+
+    })];
+}
+
+@end
+
+struct TableModelHandlerWrapper {
+    /**
+    * The TableModel that this handler is associated with. Must be the first field.
+    * This is because:
+    * ```c
+    * struct TableModelHandlerWrapper x;
+    * &x == &x.handler;
+    * ```
+    * we can abuse this to get the TableModel from the handler in the callbacks.
+    */
+    uiTableModelHandler handler;
+    weak TableModel *self;
+};
 
 static int ui_table_model_handler_num_columns(uiTableModelHandler *handler, uiTableModel *model)
 {
-    auto self = (__weak TableModel **)(handler - 1);
-    return (*self).delegate.columnCount;
+    //getting the
+    weak auto self = ((struct TableModelHandlerWrapper *)handler)->self;
+    return self.delegate.columnCount;
 }
 
 static int ui_table_model_handler_num_rows(uiTableModelHandler *handler, uiTableModel *model)
 {
-    auto self = (__weak TableModel **)(handler - 1);
-    return (*self).delegate.rowCount;
+    weak auto self = ((struct TableModelHandlerWrapper *)handler)->self;
+    return self.delegate.rowCount;
 }
 
 static uiTableValueType ui_table_model_handler_column_type(uiTableModelHandler *handler, uiTableModel *model, int column)
 {
-    auto self = (__weak TableModel **)(handler - 1);
-    return [(*self).delegate typeForColumn: column];
+    weak auto self = ((struct TableModelHandlerWrapper *)handler)->self;
+    return [self.delegate typeForColumn: column];
 }
 
 static uiTableValue *ui_table_model_handler_cell_value(uiTableModelHandler *handler, uiTableModel *model, int row, int column)
 {
-    auto self = (__weak TableModel **)(handler - 1);
-    return [(*self).delegate valueForRow: row column: column].backingValue;
+    weak auto self = ((struct TableModelHandlerWrapper *)handler)->self;
+    return [self.delegate valueForRow: row column: column].backingValue;
 }
 
 static void ui_table_model_handler_set_cell_value(uiTableModelHandler *handler, uiTableModel *model, int row, int column, const uiTableValue *value)
 {
-    auto self = (__weak TableModel **)(handler - 1);
-    [(*self).delegate setCellValueForRow: row column: column value: ({
+    auto self = ((struct TableModelHandlerWrapper *)handler)->self;
+    [self.delegate setCellValueForRow: row column: column value: ({
         uiTableValueType t = uiTableValueGetType(value);
 
-        TableValue *val;
+        id<TableValue> val;
         switch (t) {
         case uiTableValueTypeString:
             val = [StringTableValue valueWithString: [OFString stringWithUTF8String: uiTableValueString(value)]];
@@ -87,18 +140,15 @@ static void ui_table_model_handler_set_cell_value(uiTableModelHandler *handler, 
             val = [IntegerTableValue valueWithNumber: [OFNumber numberWithInt: uiTableValueInt(value)]];
             break;
         default:
-            @throw [OFInvalidArgumentException exception];
+            @throw [InvalidTableValueException exceptionWithType: t];
         }
+
         val;
     })];
 }
 
 @implementation TableModel {
-    //hack to get around the fact that in the callbacks we only get a pointer to the handler.
-    struct {
-        __weak TableModel *self;
-        uiTableModelHandler handler;
-    } _handler;
+    struct TableModelHandlerWrapper _handler;
 }
 
 - (instancetype)initWithDelegate:(id<TableModelDelegate>)delegate
@@ -114,6 +164,8 @@ static void ui_table_model_handler_set_cell_value(uiTableModelHandler *handler, 
         .SetCellValue = ui_table_model_handler_set_cell_value,
     };
     _handler.self = self;
+
+    _model = uiNewTableModel(&_handler.handler);
 
     return self;
 }
@@ -135,6 +187,7 @@ static void ui_table_model_handler_set_cell_value(uiTableModelHandler *handler, 
 {
     uiTableModelRowChanged(_model, row);
 }
+
 
 @end
 

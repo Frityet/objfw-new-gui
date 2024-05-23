@@ -1,28 +1,43 @@
-#include <ObjFW/OFObject.h>
-#import <ObjFW/ObjFW.h>
-#import <ObjUI/ObjUI.h>
+#import "common.h"
 
 #pragma clang assume_nonnull begin
 
-@interface TableValue<T> : OFObject {
-    @protected uiTableValue *_backingValue;
-}
+// @interface TableValue<T> : OFObject {
+//     @protected uiTableValue *_backingValue;
+// }
+// @property(readonly) uiTableValue *backingValue;
+
+// @property(readonly, getter=value) T value;
+// - (instancetype)initWithValue: (T)value;
+
+// @end
+
+@protocol TableValue
+
 @property(readonly) uiTableValue *backingValue;
+@property(readonly) id value;
 
-@property(readonly) T value;
-- (instancetype)initWithValue: (T)value;
-
+- (instancetype)initWithValue: (id)value;
 @end
 
-@interface StringTableValue : TableValue<OFString *>
+@interface StringTableValue : OFObject<TableValue>
 
 + (instancetype)valueWithString: (OFString *)string;
 
 @end
 
-@interface IntegerTableValue : TableValue<OFNumber *>
+@interface IntegerTableValue : OFObject<TableValue>
 
 + (instancetype)valueWithNumber: (OFNumber *)number;
+
+@end
+
+@interface InvalidTableValueException : OFException
+
+@property(readonly) uiTableValueType type;
+
+- (instancetype)initWithType: (uiTableValueType)type;
++ (instancetype)exceptionWithType: (uiTableValueType)type;
 
 @end
 
@@ -31,12 +46,13 @@
 - (int)columnCount;
 - (int)rowCount;
 - (uiTableValueType)typeForColumn:(int)column;
-- (TableValue *)valueForRow:(int)row column:(int)column;
-- (void)setCellValueForRow:(int)row column:(int)column value: (TableValue *)value;
+- (id<TableValue>)valueForRow:(int)row column:(int)column;
+- (void)setCellValueForRow:(int)row column:(int)column value: (id<TableValue>)value;
 
 @end
 
 @interface TableModel : OFObject
+
 @property(readonly) uiTableModel *model;
 @property id<TableModelDelegate> delegate;
 
