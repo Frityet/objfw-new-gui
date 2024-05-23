@@ -12,7 +12,7 @@
     return vbox;
 }
 
-- (void)doActionWithTitle:(OFString *)title
+- (void)doActionWithTitle:(OFString *)title window:(nonnull OUIWindow *)window
 {
 
 }

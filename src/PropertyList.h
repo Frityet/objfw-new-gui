@@ -15,10 +15,12 @@
 
 @end
 
-OFString *concat(OFArray<OFString *> *strs, OFString *separator);
 @interface PropertyListModel : OFObject<TableModelDelegate>
 
-@property(readonly) OFMutableArray<Property *> *properties;
+@property OFMutableArray<Property *> *properties;
+@property void (^onDelete)(int row);
+
++ (instancetype)model;
 
 @end
 

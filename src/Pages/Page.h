@@ -6,7 +6,7 @@
 
 - (OUIControl *)render;
 
-- (void)doActionWithTitle: (OFString *)title;
+- (void)doActionWithTitle: (OFString *)title window: (OUIWindow *)window;
 
 @end
 

@@ -22,26 +22,10 @@
 
 - (OFString *)description
 {
-    return [OFString stringWithFormat: @"<Property: %@ %@ %@>", _type, _name, _attributes];
+    return [OFString stringWithFormat: @"<Property: type = %@, name = %@, attributes = [ %@ ]>", _type, _name, [_attributes componentsJoinedByString: @", "]];
 }
 
 @end
-
-OFString *concat(OFArray<OFString *> *strs, OFString *separator)
-{
-    auto ret = [OFMutableString string];
-
-    for (OFString *str in strs) {
-        [ret appendString: str];
-        [ret appendString: separator];
-    }
-
-    if (ret.length > 0) {
-        [ret replaceCharactersInRange: OFMakeRange(ret.length - separator.length, separator.length) withString: @""];
-    }
-
-    return ret;
-}
 
 
 @implementation PropertyListModel
@@ -50,16 +34,18 @@ OFString *concat(OFArray<OFString *> *strs, OFString *separator)
 {
     self = [super init];
 
-    _properties = [@[
-        [Property propertyWithName: @"name" type: @"OFString *" attributes: [@[ @"readonly" ] mutableCopy]],
-    ] mutableCopy];
+    _properties = [OFMutableArray array];
+    _onDelete =  ^(int index) {};
 
     return self;
 }
 
++ (instancetype)model
+{ return [[self alloc] init]; }
+
 - (int)columnCount
 {
-    return 3;
+    return 4;
 }
 
 - (int)rowCount
@@ -72,17 +58,27 @@ OFString *concat(OFArray<OFString *> *strs, OFString *separator)
     return uiTableValueTypeString;
 }
 
-- (id<TableValue>)valueForRow: (int)row column: (int)column
+
+- (nullable id<TableValue>)valueForRow: (int)row column: (int)column
 {
-    auto property = self.properties[row];
+    Property *property;
+    @try {
+        property = self.properties[row];
+    } @catch (OFOutOfRangeException *e) {
+        [OFStdErr writeFormat: @"Invalid row: %d\n", row];
+        return [NilTableValue value];
+    }
     switch (column) {
         case 0:
             return [StringTableValue valueWithString: property.name];
         case 1:
             return [StringTableValue valueWithString: property.type];
         case 2:
-            return [StringTableValue valueWithString: concat(property.attributes, @", ")];
+            return [StringTableValue valueWithString: [property.attributes componentsJoinedByString: @", "]];
+        case 3:
+            return [StringTableValue valueWithString: @"Remove"];
         default:
+            [OFStdErr writeFormat: @"Invalid column: %d\n", column];
             @throw [OFOutOfRangeException exception];
     }
 }
@@ -99,6 +95,12 @@ OFString *concat(OFArray<OFString *> *strs, OFString *separator)
             break;
         case 2:
             property.attributes = [[value.value componentsSeparatedByString: @", "] mutableCopy];
+            break;
+
+        //the remove button
+        case 3:
+            [self.properties removeObjectAtIndex: row];
+            self.onDelete(row);
             break;
         default:
             @throw [OFOutOfRangeException exception];

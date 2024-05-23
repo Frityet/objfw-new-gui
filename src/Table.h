@@ -2,16 +2,6 @@
 
 #pragma clang assume_nonnull begin
 
-// @interface TableValue<T> : OFObject {
-//     @protected uiTableValue *_backingValue;
-// }
-// @property(readonly) uiTableValue *backingValue;
-
-// @property(readonly, getter=value) T value;
-// - (instancetype)initWithValue: (T)value;
-
-// @end
-
 @protocol TableValue
 
 @property(readonly) uiTableValue *backingValue;
@@ -23,6 +13,12 @@
 @interface StringTableValue : OFObject<TableValue>
 
 + (instancetype)valueWithString: (OFString *)string;
+
+@end
+
+@interface NilTableValue : OFObject<TableValue>
+
++ (instancetype)value;
 
 @end
 
@@ -46,8 +42,8 @@
 - (int)columnCount;
 - (int)rowCount;
 - (uiTableValueType)typeForColumn:(int)column;
-- (id<TableValue>)valueForRow:(int)row column:(int)column;
-- (void)setCellValueForRow:(int)row column:(int)column value: (id<TableValue>)value;
+- (nullable id<TableValue>)valueForRow:(int)row column:(int)column;
+- (void)setCellValueForRow:(int)row column:(int)column value: (nullable id<TableValue>)value;
 
 @end
 
@@ -76,7 +72,8 @@
 - (instancetype)initWithModel: (TableModel *)model;
 + (instancetype)tableDescribedByModel: (TableModel *)model;
 
-- (void)appendTextColumnWithTitle: (OFString *)title textModelColumn: (int)column isEditable: (bool)editable;
+- (void)appendTextColumnWithTitle: (OFString *)title column: (int)column isEditable: (bool)editable;
+- (void)appendButtonColumnWithTitle: (OFString *)title column: (int)column;
 
 @end
 

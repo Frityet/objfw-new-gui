@@ -42,6 +42,30 @@
 
 @end
 
+@implementation NilTableValue
+
+@synthesize backingValue = _backingValue;
+
+- (instancetype)init
+{
+    self = [super init];
+
+    _backingValue = uiNewTableValueInt(0);
+
+    return self;
+}
+
+- (instancetype)initWithValue:(id)value
+{ @throw [OFNotImplementedException exceptionWithSelector: _cmd object: self]; }
+
++ (instancetype)value
+{ return [[self alloc] init]; }
+
+- (id)value
+{ return nil; }
+
+@end
+
 @implementation InvalidTableValueException
 
 - (instancetype)initWithType:(uiTableValueType)type
@@ -80,7 +104,6 @@
         }
 
         str;
-
     })];
 }
 
@@ -125,10 +148,10 @@ static uiTableValue *ui_table_model_handler_cell_value(uiTableModelHandler *hand
     return [self.delegate valueForRow: row column: column].backingValue;
 }
 
-static void ui_table_model_handler_set_cell_value(uiTableModelHandler *handler, uiTableModel *model, int row, int column, const uiTableValue *value)
+static void ui_table_model_handler_set_cell_value(uiTableModelHandler *handler, uiTableModel *model, int row, int column, const uiTableValue *_Nullable value)
 {
-    auto self = ((struct TableModelHandlerWrapper *)handler)->self;
-    [self.delegate setCellValueForRow: row column: column value: ({
+    weak auto self = ((struct TableModelHandlerWrapper *)handler)->self;
+    [self.delegate setCellValueForRow: row column: column value: value == nil ? nil : ({
         uiTableValueType t = uiTableValueGetType(value);
 
         id<TableValue> val;
@@ -241,9 +264,14 @@ static void ui_table_on_row_double_clicked(uiTable *table, int i, void *data)
     uiTableOnRowDoubleClicked(uiTable(_control), ui_table_on_row_double_clicked, (__bridge void *)self);
 }
 
-- (void)appendTextColumnWithTitle:(OFString *)title textModelColumn:(int)column isEditable:(bool)editable
+- (void)appendTextColumnWithTitle:(OFString *)title column:(int)column isEditable:(bool)editable
 {
-    uiTableAppendTextColumn(uiTable(_control), [title UTF8String], column, editable ? uiTableModelColumnAlwaysEditable : uiTableModelColumnNeverEditable, nil);
+    uiTableAppendTextColumn(uiTable(_control), title.UTF8String, column, editable ? uiTableModelColumnAlwaysEditable : uiTableModelColumnNeverEditable, nil);
+}
+
+- (void)appendButtonColumnWithTitle:(OFString *)title column:(int)column
+{
+    uiTableAppendButtonColumn(uiTable(_control), title.UTF8String, column, true);
 }
 
 @end

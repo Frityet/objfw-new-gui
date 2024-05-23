@@ -12,43 +12,72 @@
 
 @implementation Application {
     id<Page> classPage, testPage, appPage;
+    OUIWindow *window;
 }
 
-- (OUIControl *)ui
+- (instancetype)init
 {
+    self = [super init];
+
     classPage = [[ClassPage alloc] init];
     testPage = [[TestPage alloc] init];
     appPage = [[AppPage alloc] init];
 
+    return self;
+}
+
+- (OUIControl *)ui
+{
     auto vbox = [OUIBox verticalBox];
     vbox.padded = true;
     {
-        [vbox appendControl: [OUIEntry entryWithLabel: @"Name" placeholder: @"MyClass"]];
+        auto nameEntry = [OUIEntry entry];
+        nameEntry.text = @"MyClass";
+        {
+            auto hbox = [OUIBox horizontalBox];
+            hbox.padded = true;
+            {
+                auto lbl = [OUILabel labelWithText: @"Name"];
+                [hbox appendControl: lbl];
+                [hbox appendControl: [OUISeperator horizontalSeperator] stretchy: true];
+                [hbox appendControl: nameEntry];
+            }
+            [vbox appendControl: hbox];
+        }
         auto tab = [OUITab tab];
         {
-            [tab appendControl: [classPage render] label: @"Class"];
-            [tab appendControl: [testPage render] label: @"Test"];
-            [tab appendControl: [appPage render] label: @"App"];
+            [tab appendControl: [classPage render]  label: @"Class"];
+            [tab appendControl: [testPage render]   label: @"Test"];
+            [tab appendControl: [appPage render]    label: @"App"];
         }
         [vbox appendControl: tab];
 
-        [vbox appendControl: [OUIButton buttonWithLabel: @"Create"] stretchy: true];
+        auto actionButton = [OUIButton buttonWithLabel: @"Create"];
+        actionButton.onChanged = ^(OUIControl *nonnil control) {
+            [classPage doActionWithTitle: nameEntry.text window: window];
+        };
+        [vbox appendControl: actionButton stretchy: true];
     }
     return vbox;
 }
 
 - (void)applicationDidFinishLaunching: (OFNotification *)notification
 {
-    OUIWindow *wind = [[OUIWindow alloc] initWithTitle: @"ObjFW-new" width: 640 height: 480 hasMenubar: false];
-    wind.child = self.ui;
-    wind.onClosing = ^(OUIWindow *nonnil window) {
+    window = [[OUIWindow alloc] initWithTitle: @"ObjFW-new" width: 640 height: 480 hasMenubar: false];
+    window.child = self.ui;
+    window.onClosing = ^(OUIWindow *nonnil window) {
         [OFApplication terminate];
         return 0;
     };
-    wind.margined = true;
+    window.margined = true;
 
-    [wind show];
-    [OUI main];
+    [window show];
+    @try {
+        [OUI main];
+    } @catch (OFException *e) {
+        [OUIDialog errorBoxForWindow: window title: @"Error" message: [OFString stringWithFormat: @"Exception of type %@: %@\nStack: %@\n", e.className, e.description, e.stackTraceSymbols]];
+        [OFApplication terminateWithStatus: EXIT_FAILURE];
+    }
     [OFApplication terminate];
 }
 
