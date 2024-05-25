@@ -1,6 +1,11 @@
 #include "App.h"
 
-@implementation AppPage
+@implementation AppPage {
+    OUIEntry *titleEntry;
+}
+
+- (OFString *)title
+{ return titleEntry.text; }
 
 - (OUIControl *)render
 {
@@ -14,7 +19,7 @@
 
 - (void)doActionWithTitle:(OFString *)title window:(nonnull OUIWindow *)window
 {
-
+    @throw [OFNotImplementedException exceptionWithSelector: _cmd object: self];
 }
 
 @end

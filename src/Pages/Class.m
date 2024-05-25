@@ -8,16 +8,33 @@
 
 @implementation ClassPage {
     PropertyListModel *model;
-    OUIEntry *superClassLabel;
+    OUIEntry *superClassEntry, *titleEntry;
 }
+
+- (OFString *)title
+{ return titleEntry.text; }
 
 - (OUIControl *)render
 {
     auto vbox = [OUIBox verticalBox];
     vbox.padded = true;
     {
-        superClassLabel = [OUIEntry entry];
-        superClassLabel.text = @"OFObject";
+        titleEntry = [OUIEntry entry];
+        titleEntry.text = @"MyClass";
+        {
+            auto hbox = [OUIBox horizontalBox];
+            hbox.padded = true;
+            {
+                auto lbl = [OUILabel labelWithText: @"Name"];
+                [hbox appendControl: lbl];
+                [hbox appendControl: [OUISeperator horizontalSeperator] stretchy: true];
+                [hbox appendControl: titleEntry];
+            }
+            [vbox appendControl: hbox];
+        }
+
+        superClassEntry = [OUIEntry entry];
+        superClassEntry.text = @"OFObject";
         {
             auto hbox = [OUIBox horizontalBox];
             hbox.padded = true;
@@ -25,7 +42,7 @@
                 auto lbl = [OUILabel labelWithText: @"Superclass"];
                 [hbox appendControl: lbl];
                 [hbox appendControl: [OUISeperator horizontalSeperator] stretchy: true];
-                [hbox appendControl: superClassLabel];
+                [hbox appendControl: superClassEntry];
             }
             [vbox appendControl: hbox];
         }
@@ -33,7 +50,7 @@
         model = [PropertyListModel model];
         auto modelObj = [TableModel modelWithDelegate: model];
         // The reason I had to add an onDelete block is because you dont have a reference to the table itself when
-        // you have an interaction on a button column. This is because it hates me.
+        // you have an interaction on a button column so you can't alert that a row was deleted there. This is because it hates me.
         model.onDelete = ^(int index) {
             [modelObj alertRowDeletedAt: index];
         };
@@ -50,6 +67,8 @@
             [table.model alertRowInsertedAt: model.properties.count - 1];
         };
         [vbox appendControl: addProp stretchy: true];
+
+        [vbox appendControl: actionButton(self) stretchy: true];
     }
     return vbox;
 }
@@ -67,7 +86,7 @@
     {
         [f writeLine: @"#import <ObjFW/ObjFW.h>"];
         [f writeLine: @""];
-        [f writeFormat: @"@interface %@ : %@\n\n", title, superClassLabel.text];
+        [f writeFormat: @"@interface %@ : %@\n\n", title, superClassEntry.text];
 
         for (Property *prop in model.properties) {
             [f writeFormat: @"@property(%@) %@%s%@;\n", prop.attributeList, prop.type, [prop.type characterAtIndex: prop.type.length - 1] == '*' ? "" : " ", prop.name];

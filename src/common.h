@@ -5,6 +5,7 @@
 
 #define nonnil _Nonnull
 #define nilable _Nullable
-#define auto __auto_type
-#define nilptr ((void *nillable)NULL)
+#define nilptr ((void *nilable)NULL)
 #define weak __weak
+
+

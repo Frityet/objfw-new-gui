@@ -6,6 +6,8 @@
 
 #import "Table.h"
 
+#import "OFObject+PrettyPrintingExtensions.h"
+
 #pragma clang assume_nonnull begin
 
 @interface Application : OFObject<OFApplicationDelegate> @end
@@ -41,22 +43,20 @@
                 [hbox appendControl: lbl];
                 [hbox appendControl: [OUISeperator horizontalSeperator] stretchy: true];
                 [hbox appendControl: nameEntry];
+                [OFStdOut writeLine: nameEntry.prettyDescription];
             }
             [vbox appendControl: hbox];
         }
         auto tab = [OUITab tab];
         {
             [tab appendControl: [classPage render]  label: @"Class"];
+            [tab setMargined: true atIndex: 0];
             [tab appendControl: [testPage render]   label: @"Test"];
+            [tab setMargined: true atIndex: 1];
             [tab appendControl: [appPage render]    label: @"App"];
+            [tab setMargined: true atIndex: 2];
         }
         [vbox appendControl: tab];
-
-        auto actionButton = [OUIButton buttonWithLabel: @"Create"];
-        actionButton.onChanged = ^(OUIControl *nonnil control) {
-            [classPage doActionWithTitle: nameEntry.text window: window];
-        };
-        [vbox appendControl: actionButton stretchy: true];
     }
     return vbox;
 }
@@ -78,7 +78,6 @@
         [OUIDialog errorBoxForWindow: window title: @"Error" message: [OFString stringWithFormat: @"Exception of type %@: %@\nStack: %@\n", e.className, e.description, e.stackTraceSymbols]];
         [OFApplication terminateWithStatus: EXIT_FAILURE];
     }
-    [OFApplication terminate];
 }
 
 @end

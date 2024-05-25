@@ -1,6 +1,11 @@
 #include "Test.h"
 
-@implementation TestPage
+@implementation TestPage {
+    OUIEntry *titleEntry;
+}
+
+- (OFString *)title
+{ return titleEntry.text; }
 
 - (OUIControl *)render
 {
